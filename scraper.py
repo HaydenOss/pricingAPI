@@ -3,7 +3,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.action_chains import ActionChains
 
 from bs4 import BeautifulSoup
 
@@ -25,8 +24,11 @@ def check_cookies():
 
 # Parse all products
 def pull_prods(soup, total_prods_int, prod_count, writer):
-    products = soup.select("div.product-tile")
-
+    product_section = soup.select_one(
+        "#main > section.container-layout.container-layout--padded > div > div > div.product-listing-viewer__product-area > div > div.product-listing-viewer__product-list-content > div"
+    )
+    products = product_section.find_all(recursive=False)
+    
     for product in products:
         # Grabbing the HTML elements
         name_tag = product.select_one("div.product-tile__name")
@@ -52,41 +54,32 @@ def pull_prods(soup, total_prods_int, prod_count, writer):
         return 1, prod_count
 
 
-def next_page(driver, pg_count):
+def next_page(driver, pg_count, home_page):
     try:
-        next_element = driver.find_element(
-            By.CSS_SELECTOR,
-            "#main > section.container-layout.container-layout--padded > div > div > div.product-listing-viewer__product-area > div > div.product-listing-viewer__pagination > nav > a.router-link-active.router-link-exact-active.base-link.base-pagination__arrow",
-        )
-
-        href = next_element.get_attribute("href")
-        print("HREF: " + str(href))
-        if href:
-            driver.get(href)
-            time.sleep(2)  # wait for new page to load
-        
-        print("Clicked next page: " + str(pg_count))
-        
-        return create_soup(driver)
+        print("Clicking next page: " + str(pg_count))
+        return create_soup(driver, (home_page + page_link + str(pg_count)))
     except Exception as e:
         print("Could not click next page:", e)
 
 
-def create_soup(driver):
+def create_soup(driver, link):
+    # Open the page
+    driver.get(link)
+    time.sleep(2)
+    check_cookies()
     return BeautifulSoup(driver.page_source, "html.parser")
 
+
+page_link = "?page="
+home_page = "https://new.aldi.us/products"
 
 options = Options()
 options.add_argument("--headless")
 driver = webdriver.Chrome(options=options)
 
-# Open the ALDI product page
-driver.get("https://new.aldi.us/products")
-time.sleep(5)
-
+print("________________________________________________")
 check_cookies()
-soup = create_soup(driver)
-
+soup = create_soup(driver, home_page)
 
 total_prods_item = soup.select_one(
     "#main > section.container-layout.container-layout--padded > div > div > div.product-listing-viewer__headline > div > h2 > span"
@@ -96,7 +89,7 @@ total_prods = total_prods_item.get_text()
 total_prods = total_prods[1 : (len(total_prods) - 1)]
 total_prods_int = int(total_prods)
 
-pg_count = 0
+pg_count = 1
 product_count = 0
 
 with open("aldi_products.csv", "w", newline="", encoding="utf-8") as f:
@@ -109,9 +102,11 @@ with open("aldi_products.csv", "w", newline="", encoding="utf-8") as f:
         parsing_status_done, product_count = pull_prods(
             soup, total_prods_int, product_count, writer
         )
-        pg_count += 1
 
-        soup = next_page(driver, pg_count)
+        pg_count += 1
+        soup = next_page(driver, pg_count, home_page)
+        print("________________________________________________")
+
 
 print("All products are pulled from this location")
 
