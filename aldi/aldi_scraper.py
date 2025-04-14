@@ -28,17 +28,19 @@ def pull_prods(soup, total_prods_int, prod_count, writer):
         "#main > section.container-layout.container-layout--padded > div > div > div.product-listing-viewer__product-area > div > div.product-listing-viewer__product-list-content > div"
     )
     products = product_section.find_all(recursive=False)
-
+    tester = 0
+    fake = 0
     for product in products:
         # Grabbing the HTML elements
         name_tag = product.select_one("div.product-tile__name")
-        price_tag = product.select_one("div.base-price span")
+        price_tag = product.select_one("span.base-price__regular > span")
 
         # Getting the text for the item
         name = name_tag.get_text(strip=True) if name_tag else "No name"
         price = price_tag.get_text(strip=True) if price_tag else "No price"
-
-        # print("Product: " + name)
+        tester += 1
+        if tester % 10 == 0:
+            print("Product: " + name + " : " + price) 
 
         # Writing the text to the file
         writer.writerow([name, price, "Aldi"])
@@ -47,7 +49,7 @@ def pull_prods(soup, total_prods_int, prod_count, writer):
     print(
         "Number of prods pulled so far: " + str(prod_count) + "/" + str(total_prods_int)
     )
-    if total_prods_int != prod_count:
+    if total_prods_int >= prod_count:
         return 0, prod_count
     else:
         print("Done pulling and saving prods")
@@ -74,7 +76,7 @@ page_link = "?page="
 home_page = "https://new.aldi.us/products"
 
 options = Options()
-options.add_argument("--headless")
+# options.add_argument("--headless")
 driver = webdriver.Chrome(options=options)
 
 print("________________________________________________")
@@ -92,7 +94,7 @@ total_prods_int = int(total_prods)
 pg_count = 1
 product_count = 0
 
-with open("../csv/aldi_products.csv", "w", newline="", encoding="utf-8") as f:
+with open("./csv/aldi_products.csv", "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
     writer.writerow(["Product", "Price", "Store"])
 
