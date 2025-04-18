@@ -6,31 +6,8 @@ from selenium.webdriver.support import expected_conditions as EC
 
 from bs4 import BeautifulSoup
 
-import hashlib
 import time
 import csv
-
-
-def pull_location(driver):
-
-    cookies = driver.get_cookies()
-    with open("./cookies.txt", "w", newline="\n", encoding="utf-8") as f:
-        for cookie in cookies:
-
-            f.write(cookie["name"] + " " + cookie["value"])
-    # zip = ""
-    # town_name = ""
-
-    # zip = [cookie["value"] for cookie in cookies if cookie["name"] == "bcClubZipCode"]
-    # town_name = [
-    #     cookie["value"] for cookie in cookies if cookie["name"] == "bcClubName"
-    # ]
-
-    # print(" Type: " + str(type(zip)))
-    # print("Zip code: ", zip )
-    # print("Town: " + town_name)
-    # print( " Type: " + type(town_name))
-    # return zip, town_name
 
 
 def check_cookies():
@@ -51,11 +28,8 @@ def pull_prods(soup, total_prods_int, prod_count, writer):
         "#main > section.container-layout.container-layout--padded > div > div > div.product-listing-viewer__product-area > div > div.product-listing-viewer__product-list-content > div"
     )
     products = product_section.find_all(recursive=False)
-
-    # Testing variables
     tester = 0
     fake = 0
-
     for product in products:
         # Grabbing the HTML elements
         name_tag = product.select_one("div.product-tile__name")
@@ -64,11 +38,9 @@ def pull_prods(soup, total_prods_int, prod_count, writer):
         # Getting the text for the item
         name = name_tag.get_text(strip=True) if name_tag else "No name"
         price = price_tag.get_text(strip=True) if price_tag else "No price"
-
-        # Just used for console level checking
         tester += 1
         if tester % 10 == 0:
-            print("Product: " + name + " : " + price)
+            print("Product: " + name + " : " + price) 
 
         # Writing the text to the file
         writer.writerow([name, price, "Aldi"])
@@ -104,25 +76,13 @@ page_link = "?page="
 home_page = "https://new.aldi.us/products"
 
 options = Options()
-options.add_argument("--headless")
+# options.add_argument("--headless")
 driver = webdriver.Chrome(options=options)
 
 print("________________________________________________")
 check_cookies()
 soup = create_soup(driver, home_page)
 
-with open("./csv/store_data.csv", "w", newline="", encoding="utf-8") as f:
-    zip_code, town = pull_location(driver)
-
-    
-    # address = zip_code + town
-    # print("Address: " + address)
-    # hashlib.md5(address.strip().lower().encode()).hexdigest()
-
-    # f.write("id, street_address, zipcode")
-    # f.write(address, town, zip_code)
-
-time.sleep(10)
 total_prods_item = soup.select_one(
     "#main > section.container-layout.container-layout--padded > div > div > div.product-listing-viewer__headline > div > h2 > span"
 )
