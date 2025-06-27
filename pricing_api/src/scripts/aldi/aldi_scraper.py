@@ -9,6 +9,8 @@ from bs4 import BeautifulSoup
 import time
 import csv
 
+from pricing_api.src.scripts.file_management import store_file_mngmt
+
 
 def check_cookies():
     try:
@@ -22,14 +24,48 @@ def check_cookies():
         print("No cookie popup found.")
 
 
+def create_soup(driver, link):
+    # Open the page
+    driver.get(link)
+    time.sleep(2)
+    check_cookies()
+    return BeautifulSoup(driver.page_source, "html.parser")
+
+def get_location():
+    # Opening the location page
+    locator = driver.find_element(
+        By.CSS_SELECTOR,
+        "div.select-merchant-feature-bar__service-address-wrapper > button",
+    )
+    if locator:
+        locator.click()
+        time.sleep(1.5)
+    else:
+        print("Locator not found for location")
+
+    # Pulling the location data
+    location_div = driver.find_element(
+        By.CSS_SELECTOR,
+        "div > button.base-button.base-button--primary-light-background",
+    )
+
+    if location_div:
+        address = location_div.text
+        add_split = address.split()
+        print("Address: ", add_split)
+    else:
+        print("Location div not found.")
+
+    return add_split[0], add_split[1], add_split[2]
+
+
 # Parse all products
-def pull_prods(soup, total_prods_int, prod_count, writer):
+def get_prods(soup, total_prods_int, prod_count, writer):
     product_section = soup.select_one(
         "#main > section.container-layout.container-layout--padded > div > div > div.product-listing-viewer__product-area > div > div.product-listing-viewer__product-list-content > div"
     )
     products = product_section.find_all(recursive=False)
-    tester = 0
-    fake = 0
+
     for product in products:
         # Grabbing the HTML elements
         name_tag = product.select_one("div.product-tile__name")
@@ -38,9 +74,6 @@ def pull_prods(soup, total_prods_int, prod_count, writer):
         # Getting the text for the item
         name = name_tag.get_text(strip=True) if name_tag else "No name"
         price = price_tag.get_text(strip=True) if price_tag else "No price"
-        tester += 1
-        if tester % 10 == 0:
-            print("Product: " + name + " : " + price) 
 
         # Writing the text to the file
         writer.writerow([name, price, "Aldi"])
@@ -63,13 +96,6 @@ def next_page(driver, pg_count, home_page):
     except Exception as e:
         print("Could not click next page:", e)
 
-
-def create_soup(driver, link):
-    # Open the page
-    driver.get(link)
-    time.sleep(2)
-    check_cookies()
-    return BeautifulSoup(driver.page_source, "html.parser")
 
 
 page_link = "?page="
@@ -101,7 +127,7 @@ with open("./csv/aldi_products.csv", "w", newline="", encoding="utf-8") as f:
     parsing_status_done = False
 
     while not parsing_status_done:
-        parsing_status_done, product_count = pull_prods(
+        parsing_status_done, product_count = get_prods(
             soup, total_prods_int, product_count, writer
         )
 

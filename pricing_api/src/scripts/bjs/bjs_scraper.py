@@ -6,36 +6,10 @@ from selenium.webdriver.support import expected_conditions as EC
 
 from bs4 import BeautifulSoup
 
-import hashlib
 import time
 import csv
 
-
-def pull_location():
-    # Opening the location page
-    locator = driver.find_element(
-        By.CSS_SELECTOR, "div.headerClubLocator.ml-2.only-desktop > span"
-    )
-    if locator:
-
-        locator.click()
-        time.sleep(1.5)
-    else:
-        print("Locator not found for location")
-
-    # Pulling the location data
-    location_div = driver.find_element(
-        By.CSS_SELECTOR, "#stickyHeader_selectClub > div.address.pt-2.mt-4 > p:nth-child(3)"
-    )
-
-    if location_div:
-        address = location_div.text
-        add_split = address.split()
-        print("Address: ", add_split)
-    else:
-        print("Location div not found.")
-
-    return add_split[0], add_split[1], add_split[2]
+from pricing_api.src.scripts.file_management import store_file_mngmt
 
 
 def cookie_popup():
@@ -52,10 +26,38 @@ def cookie_popup():
         print("No cookie popup found.")
 
 
+def get_location():
+    # Opening the location page
+    locator = driver.find_element(
+        By.CSS_SELECTOR, "div.headerClubLocator.ml-2.only-desktop > span"
+    )
+    if locator:
+
+        locator.click()
+        time.sleep(1.5)
+    else:
+        print("Locator not found for location")
+
+    # Pulling the location data
+    location_div = driver.find_element(
+        By.CSS_SELECTOR,
+        "#stickyHeader_selectClub > div.address.pt-2.mt-4 > p:nth-child(3)",
+    )
+
+    if location_div:
+        address = location_div.text
+        add_split = address.split()
+        print("Address: ", add_split)
+    else:
+        print("Location div not found.")
+
+    return add_split[0], add_split[1], add_split[2]
+
+
 # Parse all products
-def pull_prods(prod_count, writer):
+def get_prods(prod_count, writer):
     product_section = soup.select_one(
-        "#single-spa-application\:\@bjs\/plp-micro-frontend > main > div.SharedPlpViewstyle__SharedPLPOuterWrapper-sc-d5hmft-0.khyUHc > div.Commonstyles__SearchWrapper-sc-1ykuvkg-1.ikSGAP.is-grid-view > div.SearchBottomSectionstyle__SearchBottomSectionStyle-sc-1axdosr-0.gkNhFF > div.SearchResultsBlockstyle__SrbWrapperStyle-sc-39c4cm-1.cZUyGA.srb-wrapper > div.SearchResultsBlockstyle__SearchResultsStyle-sc-39c4cm-0.dQoxZn"
+        "div.SearchResultsBlockstyle__SearchResultsStyle-sc-39c4cm-0.dQoxZn"
     )
     products = product_section.find_all(recursive=False)
 
@@ -63,8 +65,6 @@ def pull_prods(prod_count, writer):
         # Grabbing the HTML elements
         name = product.get("data-cnstrc-item-name")
         price = product.get("data-cnstrc-item-price")
-
-        # print("Product: " + name) if name else print("Product: Not Pulled")
 
         if not name:
             name = "NULL"
@@ -104,41 +104,6 @@ def next_page(driver):
     except Exception as e:
         print("Could not click next page:", e)
 
-def store_file_mngmt():
-    replacement_num = 0
-    with open("./store_numbers.txt", "r", newline="", encoding="utf-8") as store_counter_file:
-        
-        num_stores = int(store_counter_file.readline())
-        num_stores += 1
-        replacement_num = num_stores
-
-        town, state, zip = pull_location()
-        with open("./csv/store_data.csv", "w", newline="", encoding="utf-8") as store_data_file:
-            address = str(num_stores) + zip + town
-            id = hashlib.md5(address.strip().lower().encode()).hexdigest()
-
-            store_data_file.write("id, zip, state, town")
-            store_data_file.write(id + "," + zip  + "," + state + "," + town)
-
-
-    with open("./store_numbers.txt", "w", newline="", encoding="utf-8") as store_counter_file:
-        store_counter_file.write(str(replacement_num))
-
-def product_file_mngmt():
-    with open("./csv/bjs_products.csv", "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(["Product", "Price", "Store"])
-
-        parsing_status_done = False
-
-        while not parsing_status_done:
-            parsing_status_done, product_count = pull_prods(
-                soup, writer
-            )
-
-            soup = next_page(driver)
-            print("________________________________________________")
-
 
 home_page = "https://www.bjs.com/cg/grocery/?shopall=y&bcid=cghrba00&idt=20250204&icn=CLP_Grocery"
 
@@ -149,9 +114,9 @@ driver = webdriver.Chrome(options=options)
 print("________________________________________________")
 try:
     driver.get(home_page)
-    time.sleep(.5)
+    time.sleep(0.5)
     cookie_popup()
-    time.sleep(.25)
+    time.sleep(0.25)
     soup = BeautifulSoup(driver.page_source, "html.parser")
     total_prods_item = soup.select_one(
         "#single-spa-application\:\@bjs\/plp-micro-frontend > main > div.SharedPlpViewstyle__SharedPLPOuterWrapper-sc-d5hmft-0.khyUHc > div.Commonstyles__SearchWrapper-sc-1ykuvkg-1.ikSGAP.is-grid-view > div.Loadmorestyle__LoadMoreStyle-sc-14fokh3-0.bkmoCh > p"
@@ -164,11 +129,22 @@ try:
 
     product_count = 0
 
-    product_file_mngmt()
+    with open("./csv/bjs_products.csv", "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Product", "Price", "Store"])
+
+        parsing_status_done = False
+
+        while not parsing_status_done:
+            parsing_status_done, product_count = get_prods(soup, writer)
+
+            soup = next_page(driver)
+            print("________________________________________________")
 except:
     print("Error in opening page and pulling products")
 
-store_file_mngmt()
+town, state, zip = get_location()
+store_file_mngmt(town, state, zip)
 print("All products are pulled from this location")
 
 driver.quit()
