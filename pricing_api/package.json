@@ -6,7 +6,13 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+
+    "pylint": "ruff check .",
+    "pyfix": "ruff check . --fix",
+    "pyufix": "ruff check . --unsafe-fixes",
+    "pyformat": "ruff format .",
+    "pyclean": "ruff check . --fix && ruff format ."
   },
   "dependencies": {
     "react": "^19.0.0",

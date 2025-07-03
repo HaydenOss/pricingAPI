@@ -1,37 +1,34 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+import csv
+import time
 
 from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.support.ui import WebDriverWait
 
-import time
-import csv
 
-from pricing_api.src.scripts.file_management import store_file_mngmt
-
-
-def check_cookies():
+def check_cookies() -> None:
     try:
         accept_btn = WebDriverWait(driver, 5).until(
-            EC.element_to_be_clickable((By.ID, "onetrust-accept-btn-handler"))
+            ec.element_to_be_clickable((By.ID, "onetrust-accept-btn-handler"))
         )
         accept_btn.click()
         print("Accepted cookies.")
         time.sleep(2)
-    except:
+    except Exception:
         print("No cookie popup found.")
 
 
-def create_soup(driver, link):
+def create_soup(driver: BeautifulSoup, link: str) -> BeautifulSoup:
     # Open the page
     driver.get(link)
     time.sleep(2)
     check_cookies()
     return BeautifulSoup(driver.page_source, "html.parser")
 
-def get_location():
+def get_location() -> tuple[str, str, str]:
     # Opening the location page
     locator = driver.find_element(
         By.CSS_SELECTOR,
@@ -60,7 +57,7 @@ def get_location():
 
 
 # Parse all products
-def get_prods(soup, total_prods_int, prod_count, writer):
+def get_prods(soup: BeautifulSoup, total_prods_int: int, prod_count: int, writer: csv.writer) -> tuple[int, int]:
     product_section = soup.select_one(
         "#main > section.container-layout.container-layout--padded > div > div > div.product-listing-viewer__product-area > div > div.product-listing-viewer__product-list-content > div"
     )
@@ -89,7 +86,7 @@ def get_prods(soup, total_prods_int, prod_count, writer):
         return 1, prod_count
 
 
-def next_page(driver, pg_count, home_page):
+def next_page(driver: BeautifulSoup, pg_count: int, home_page: str) -> BeautifulSoup:
     try:
         print("Clicking next page: " + str(pg_count))
         return create_soup(driver, (home_page + page_link + str(pg_count)))
@@ -97,6 +94,8 @@ def next_page(driver, pg_count, home_page):
         print("Could not click next page:", e)
 
 
+
+## MAIN SCRIPT
 
 page_link = "?page="
 home_page = "https://new.aldi.us/products"
@@ -120,7 +119,7 @@ total_prods_int = int(total_prods)
 pg_count = 1
 product_count = 0
 
-with open("./csv/aldi_products.csv", "w", newline="", encoding="utf-8") as f:
+with open("../data_files/temp/products.csv", "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
     writer.writerow(["Product", "Price", "Store"])
 

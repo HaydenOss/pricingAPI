@@ -1,6 +1,6 @@
 import csv
 
-with open('input.csv', 'r', encoding='utf-8') as infile, \
+with open('input.csv', encoding='utf-8') as infile, \
      open('output.csv', 'w', newline='', encoding='utf-8') as outfile:
     
     reader = csv.DictReader(infile)

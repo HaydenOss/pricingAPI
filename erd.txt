@@ -1,0 +1,53 @@
+1. Store
+---------
+- store_id      [PK] INT
+- name          TEXT
+- description   TEXT (optional)
+
+Relationships:
+- One Store has many Locations
+
+
+2. Location
+-----------
+- location_id   [PK] INT
+- store_id      [FK → Store.store_id]
+- street_address TEXT
+- state         TEXT
+- zip           TEXT
+
+Relationships:
+- Each Location belongs to one Store
+- One Location has many Listings
+
+
+3. Product
+----------
+- product_id    [PK] INT
+- name          TEXT
+- description   TEXT (optional)
+
+Relationships:
+- One Product can be listed in many Locations via Listings
+
+
+4. Listing
+----------
+- listing_id    [PK] INT
+- product_id    [FK → Product.product_id]
+- location_id   [FK → Location.location_id]
+- price         DECIMAL(10,2)
+- scraped_at    TIMESTAMP
+
+Relationships:
+- Each Listing links one Product to one Location
+- Includes dynamic fields like price and scrape timestamp
+
+
+===========================
+🔁 RELATIONSHIP SUMMARY
+===========================
+
+- Store     (1) → (∞) Location
+- Location  (1) → (∞) Listing
+- Product   (1) → (∞) Listing

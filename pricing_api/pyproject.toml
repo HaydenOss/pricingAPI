@@ -1,0 +1,42 @@
+[project]
+name = "pricing-scraper"
+version = "0.1.0"
+description = "A Python web scraper for collecting nationwide pricing data."
+authors = ["Hayden Ossinger"]
+dependencies = [
+    "requests",
+    "beautifulsoup4",
+    "pandas",
+    "lxml"
+]
+requires-python = ">=3.10"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+lint.select = [
+  "E",    # pycodestyle (style)
+  "F",    # pyflakes (bug detection)
+  "B",    # flake8-bugbear (best practices)
+  "I",    # isort (import sorting)
+  "UP",   # pyupgrade (modern syntax)
+  "C90",  # mccabe (complexity)
+  "N",    # pep8-naming (naming conventions)
+  "ANN"   # flake8-annotations (type hinting)
+]
+
+lint.ignore = [
+  "E501",     # Line too long (black handles this)
+  "ANN101",   # Self argument missing type annotation
+  "ANN102"    # Cls argument missing type annotation
+]
+
+exclude = [
+  "virtual_env",      
+  "__pycache__",
+  "node_modules",
+  "build",
+  "dist",
+  "migrations"
+]

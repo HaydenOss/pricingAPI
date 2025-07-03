@@ -1,32 +1,30 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+import csv
+import time
 
 from bs4 import BeautifulSoup
-
-import time
-import csv
-
 from pricing_api.src.scripts.file_management import store_file_mngmt
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.support.ui import WebDriverWait
 
 
-def cookie_popup():
+def cookie_popup() -> None:
     try:
         popup_btn = WebDriverWait(driver, 5).until(
-            EC.element_to_be_clickable(
+            ec.element_to_be_clickable(
                 (By.CSS_SELECTOR, "#onetrust-close-btn-container > button")
             )
         )
         popup_btn.click()
         print("Accepted cookies.")
         time.sleep(2)
-    except:
+    except Exception:
         print("No cookie popup found.")
 
 
-def get_location():
+def get_location() -> None:
     # Opening the location page
     locator = driver.find_element(
         By.CSS_SELECTOR, "div.headerClubLocator.ml-2.only-desktop > span"
@@ -55,7 +53,7 @@ def get_location():
 
 
 # Parse all products
-def get_prods(prod_count, writer):
+def get_prods(prod_count: int, writer: csv.writer) -> tuple[int, int]:
     product_section = soup.select_one(
         "div.SearchResultsBlockstyle__SearchResultsStyle-sc-39c4cm-0.dQoxZn"
     )
@@ -85,10 +83,10 @@ def get_prods(prod_count, writer):
         return 1, prod_count
 
 
-def next_page(driver):
+def next_page(driver: BeautifulSoup) -> BeautifulSoup:
     try:
         load_more_btn = WebDriverWait(driver, 5).until(
-            EC.element_to_be_clickable(
+            ec.element_to_be_clickable(
                 (
                     By.CSS_SELECTOR,
                     "#single-spa-application\:\@bjs\/plp-micro-frontend > main > div.SharedPlpViewstyle__SharedPLPOuterWrapper-sc-d5hmft-0.khyUHc > div.Commonstyles__SearchWrapper-sc-1ykuvkg-1.ikSGAP.is-grid-view > div.Loadmorestyle__LoadMoreStyle-sc-14fokh3-0.bkmoCh > button",
@@ -140,7 +138,7 @@ try:
 
             soup = next_page(driver)
             print("________________________________________________")
-except:
+except Exception:
     print("Error in opening page and pulling products")
 
 town, state, zip = get_location()
