@@ -71,7 +71,7 @@ dependencies = [
     "zstandard==0.23.0",
     "isort==6.0.1",
     "black==25.1.0",
-    "cors (>=1.0.1,<2.0.0)"
+    "cors (>=1.0.1,<2.0.0)",
 ]
 
 
